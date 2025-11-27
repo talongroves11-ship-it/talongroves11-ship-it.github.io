@@ -6,115 +6,23 @@
 <title>SkyView Aerial Media</title>
 
 <style>
-/* —— GENERAL STYLE —— */
-body {
-    font-family: Arial, sans-serif;
-    margin: 0;
-    padding: 0;
-    background: #0f0f0f;
-    color: #eaeaea;
-}
-
-/* —— HEADER —— */
-header {
-    background: #111;
-    color: #fff;
-    padding: 25px;
-    text-align: center;
-    border-bottom: 2px solid #222;
-}
-
-nav {
-    background: #181818;
-    padding: 12px;
-    text-align: center;
-    position: sticky;
-    top: 0;
-    z-index: 5;
-}
-
-nav a {
-    color: white;
-    margin: 0 18px;
-    text-decoration: none;
-    font-weight: bold;
-    font-size: 1.05rem;
-    transition: 0.3s;
-}
-
-nav a:hover {
-    color: #00aaff;
-}
-
-/* —— HERO —— */
-.hero {
-    height: 65vh;
-    background: url('images/dji_fly_20251017_194232_718_1760754518795_photo.jpeg') center/cover no-repeat;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    color: white;
-    text-shadow: 2px 2px 8px rgba(0,0,0,.7);
-    font-size: 3rem;
-    font-weight: bold;
-    border-bottom: 3px solid #222;
-    animation: fadeIn 1.5s ease;
-}
-
-/* —— ANIMATIONS —— */
-@keyframes fadeIn {
-    from { opacity: 0; transform: translateY(20px);}
-    to { opacity: 1; transform: translateY(0);}
-}
-
-.section {
-    padding: 45px;
-    max-width: 1100px;
-    margin: 30px auto;
-    background: #1c1c1c;
-    border-radius: 14px;
-    box-shadow: 0 4px 25px rgba(0,0,0,0.3);
-    animation: fadeIn 1.2s ease;
-}
-
-/* —— GALLERY —— */
-.gallery {
-    display: flex;
-    flex-wrap: wrap;
-    justify-content: center;
-    gap: 18px;
-}
-
-.gallery img {
-    width: 100%;
-    max-width: 300px;
-    border-radius: 12px;
-    box-shadow: 0 4px 18px rgba(0,0,0,0.5);
-    transition: transform 0.3s ease, box-shadow 0.3s ease;
-}
-
-.gallery img:hover {
-    transform: scale(1.05);
-    box-shadow: 0 6px 25px rgba(0,0,0,0.7);
-}
-
-/* —— FOOTER —— */
-footer {
-    background: #111;
-    color: #ccc;
-    text-align: center;
-    padding: 20px;
-    margin-top: 40px;
-    border-top: 2px solid #222;
-}
+body { font-family: Arial, sans-serif; margin: 0; padding: 0; background: #f4f4f4; }
+header { background: #111; color: #fff; padding: 20px; text-align: center; }
+nav { background: #222; padding: 10px; text-align: center; }
+nav a { color: white; margin: 0 15px; text-decoration: none; font-weight: bold; }
+.hero { height: 60vh; background: url('https://images.unsplash.com/photo-1508615039623-a25605d2b022?auto=format&fit=crop&w=1950&q=80') center/cover no-repeat; display: flex; align-items: center; justify-content: center; color: white; text-shadow: 2px 2px 6px rgba(0,0,0,.6); font-size: 3rem; font-weight: bold; }
+.section { padding: 40px; max-width: 1000px; margin: auto; background: white; margin-top: 20px; border-radius: 12px; }
+.gallery img { width: 100%; max-width: 300px; margin: 10px; border-radius: 10px; box-shadow: 0 4px 10px rgba(0,0,0,0.2); }
+.gallery { display: flex; flex-wrap: wrap; justify-content: center; }
+footer { background: #111; color: #fff; text-align: center; padding: 20px; margin-top: 40px; }
 </style>
 
 </head>
 <body>
 
 <header>
-    <h1>SkyView Aerial Media</h1>
-    <p>Professional Drone Photography & Real Estate Imaging</p>
+<h1>SkyView Aerial Media</h1>
+<p>Professional Drone Photography & Videography</p>
 </header>
 
 <nav>
@@ -125,18 +33,60 @@ footer {
 
 <div class="hero">Elevate Your Vision</div>
 
-<!-- —— SERVICES —— -->
+<!-- SERVICES SECTION -->
 <div class="section" id="services">
 <h2>Our Services</h2>
-<p>
-SkyView Aerial Media provides high-quality professional drone imaging that showcases properties, businesses, and landscapes with precision and cinematic detail. Whether you need marketing visuals or documentation shots, we deliver clean, polished imagery tailored to your goals.
-</p>
 
-<!-- REAL ESTATE -->
-<h3 style="margin-top: 30px;">📍 Real Estate Aerial Photography</h3>
-<p>
-Premium aerial imagery designed to highlight property scale, location, and appeal. Perfect for real estate listings, land development, Airbnb hosts, and property management.
-</p>
+<!-- Real Estate Aerials -->
+<div class="portfolio-category">
+    <h2>Real Estate Aerials</h2>
+    <div class="gallery">
+        <img src="images/dji_fly_20251017_194232_718_1760754518795_photo.jpeg" alt="Real Estate 1">
+        <img src="images/dji_fly_20251017_194256_719_1760754520166_photo.jpeg" alt="Real Estate 2">
+        <img src="images/dji_fly_20251011_195240_711_1760273018334_photo.jpeg" alt="Real Estate 3">
+    </div>
+</div>
 
-<div class="gallery">
-    <img src="images/dji_fly_20251017_194232_718_176075451879_
+<!-- Business Promo Videos -->
+<div class="portfolio-category">
+    <h2>Business Promo Videos</h2>
+    <div class="gallery">
+        <img src="images/dji_fly_20250731_203400_653_1758918375857_photo 2.JPG" alt="Business 1">
+        <img src="images/dji_fly_20251017_194652_726_1760754529444_photo 2.JPG" alt="Business 2">
+    </div>
+</div>
+
+</div>
+
+
+<!-- PORTFOLIO -->
+<div class="section" id="portfolio">
+<h2>Portfolio</h2>
+<p>More sample drone shots coming soon!</p>
+</div>
+
+
+<!-- CONTACT -->
+<div class="section" id="contact">
+<h2>Contact Us</h2>
+<p>Email: <a href="mailto:skyaerials16@gmail.com">skyaerials16@gmail.com</a></p>
+<p>Instagram: @skyview.aerials</p>
+<br>
+
+<form action="https://formspree.io/f/mayplkpr" method="POST" 
+      style="display:flex;flex-direction:column;gap:10px;max-width:400px;">
+<input type="text" name="name" placeholder="Your Name" required>
+<input type="email" name="email" placeholder="Your Email" required>
+<textarea name="message" placeholder="Your Message" rows="5" required></textarea>
+<button type="submit" style="padding:10px;border:none;background:#111;color:#fff;border-radius:6px;font-weight:bold;cursor:pointer;">
+Send Message
+</button>
+</form>
+</div>
+
+<footer>
+© 2025 SkyView Aerial Media — All Rights Reserved
+</footer>
+
+</body>
+</html>
