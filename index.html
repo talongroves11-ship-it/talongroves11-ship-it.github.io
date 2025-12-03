@@ -3,25 +3,20 @@
 <head>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width,initial-scale=1.0,maximum-scale=1.0,user-scalable=no"/>
-<title>3D Drift — Playable in Safari</title>
+<title>3D Drift — Upgraded</title>
 <style>
-  html,body { height:100%; margin:0; background:#0b0b0f; overflow:hidden; -webkit-tap-highlight-color: transparent; }
-  #ui {
-    position:fixed; left:12px; top:12px; z-index:10; color:#fff; font-family:Inter,Arial,sans-serif;
-    text-shadow:0 2px 8px rgba(0,0,0,0.7);
-  }
-  #ui .stat { margin-bottom:6px; font-size:16px; }
-  #controls {
-    position:fixed; right:12px; bottom:12px; z-index:12; display:flex; gap:10px; align-items:center;
-    pointer-events:none;
-  }
-  .pad { pointer-events:auto; width:74px; height:74px; border-radius:50%; background:#ffffff22; border:2px solid #ffffff33;
-        display:flex; align-items:center; justify-content:center; color:#fff; font-weight:bold; font-size:18px; user-select:none; touch-action:none; }
-  #leftPad { transform:translateX(-10px); }
-  #rightPad { transform:translateX(10px); }
-  #upPad { width:58px; height:58px; border-radius:12px; font-size:14px; display:flex; align-items:center; justify-content:center; }
-  #footerNote { position:fixed; left:12px; bottom:10px; color:#aaa; font-size:12px; z-index:9; }
-  canvas { display:block; }
+  html,body{height:100%;margin:0;background:#06060a;overflow:hidden;-webkit-tap-highlight-color:transparent}
+  #ui{position:fixed;left:12px;top:12px;z-index:20;color:#fff;font-family:Inter,Arial,sans-serif;text-shadow:0 2px 10px rgba(0,0,0,0.7)}
+  #ui .stat{margin-bottom:6px;font-size:15px}
+  #controls{position:fixed;right:12px;bottom:12px;z-index:21;display:flex;gap:10px;align-items:center;pointer-events:none}
+  .pad{pointer-events:auto;width:70px;height:70px;border-radius:50%;background:#ffffff22;border:2px solid #ffffff33;display:flex;align-items:center;justify-content:center;color:#fff;font-weight:bold;font-size:20px;user-select:none;touch-action:none}
+  #upPad{width:86px;height:86px;border-radius:14px;font-size:16px}
+  #settings{position:fixed;right:12px;top:12px;z-index:22;color:#ddd;font-family:Arial,Helvetica,sans-serif}
+  #settings button{display:block;margin-bottom:6px;padding:8px;border-radius:8px;border:0;background:#111;color:#fff;cursor:pointer}
+  #footerNote{position:fixed;left:12px;bottom:10px;color:#aaa;font-size:12px;z-index:19}
+  canvas{display:block}
+  .hud{position:fixed;left:50%;transform:translateX(-50%);top:10px;color:#fff;z-index:22;pointer-events:none}
+  .hud .title{font-size:20px;font-weight:700;margin-bottom:6px}
 </style>
 </head>
 <body>
@@ -31,365 +26,503 @@
   <div class="stat" id="score">Score: 0</div>
 </div>
 
+<div id="settings">
+  <button id="qualityBtn">Quality: High</button>
+  <button id="soundBtn">Sound: On</button>
+  <button id="restartBtn">Reset Position</button>
+</div>
+
+<div class="hud"><div class="title">3D Drift — Upgraded</div></div>
+
 <div id="controls">
   <div id="leftPad" class="pad">◀</div>
-  <div id="upPad" class="pad" style="width:86px;height:86px;border-radius:14px;font-size:15px;">▲</div>
+  <div id="upPad" class="pad">▲</div>
   <div id="rightPad" class="pad">▶</div>
 </div>
 
-<div id="footerNote">Tap controls on phone — arrow keys work on desktop</div>
+<div id="footerNote">Arrow keys or tap controls. Handbrake = space. Try bumping AI cars.</div>
 
-<!-- three.js CDN -->
+<!-- three.js -->
 <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r155/three.min.js"></script>
 
 <script>
 /* =========================
-   3D Drift Game - Single File
-   Simplified arcade drifting physics + visuals
+   3D Drift Upgraded Single File
+   - Improved car visuals (procedural)
+   - Synthesized engine + skid audio
+   - Track, cones, AI opponents
+   - Low-quality toggle for older phones
    ========================= */
 
-// === BASIC SETUP ===
-let scene = new THREE.Scene();
-scene.fog = new THREE.FogExp2(0x0b0b0f, 0.0009);
+// ---------- Basic three.js scene ----------
+const scene = new THREE.Scene();
+scene.fog = new THREE.FogExp2(0x05050a, 0.0009);
 
-let camera = new THREE.PerspectiveCamera(60, innerWidth / innerHeight, 0.1, 2000);
+const camera = new THREE.PerspectiveCamera(60, innerWidth/innerHeight, 0.1, 3000);
 camera.position.set(0, 6, -12);
 
-const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: false });
+const renderer = new THREE.WebGLRenderer({antialias:true});
 renderer.setSize(innerWidth, innerHeight);
+renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
 renderer.shadowMap.enabled = true;
 renderer.shadowMap.type = THREE.PCFSoftShadowMap;
-renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
 document.body.appendChild(renderer.domElement);
 
-// resize
-window.addEventListener('resize', ()=> {
-  camera.aspect = innerWidth / innerHeight;
+window.addEventListener('resize', ()=>{
+  camera.aspect = innerWidth/innerHeight;
   camera.updateProjectionMatrix();
   renderer.setSize(innerWidth, innerHeight);
 });
 
-// === LIGHTING ===
+// ---------- Lights ----------
 const hemi = new THREE.HemisphereLight(0xbfeaff, 0x080820, 0.9);
 scene.add(hemi);
-const dir = new THREE.DirectionalLight(0xffffff, 0.9);
-dir.position.set(-10, 20, 10);
+const dir = new THREE.DirectionalLight(0xffffff, 0.95);
+dir.position.set(-12, 24, 14);
 dir.castShadow = true;
 dir.shadow.mapSize.set(1024,1024);
-dir.shadow.camera.left = -40; dir.shadow.camera.right = 40; dir.shadow.camera.top = 40; dir.shadow.camera.bottom = -40;
+dir.shadow.camera.left=-60; dir.shadow.camera.right=60; dir.shadow.camera.top=60; dir.shadow.camera.bottom=-60;
 scene.add(dir);
 
-// subtle rim light
-const rim = new THREE.DirectionalLight(0x88c0ff, 0.2);
-rim.position.set(10, 10, -10);
-scene.add(rim);
+// small backlight
+const back = new THREE.DirectionalLight(0x88c0ff, 0.2);
+back.position.set(10,10,-10);
+scene.add(back);
 
-// === GROUND / TRACK ===
-const groundGeo = new THREE.PlaneGeometry(1200, 1200, 10, 10);
-const groundMat = new THREE.MeshStandardMaterial({ color:0x1e242a, roughness:0.8, metalness:0.1 });
-const ground = new THREE.Mesh(groundGeo, groundMat);
+// ---------- Ground / track ----------
+const ground = new THREE.Mesh(
+  new THREE.PlaneGeometry(1600,1600,10,10),
+  new THREE.MeshStandardMaterial({color:0x121417, roughness:0.86, metalness:0.02})
+);
 ground.rotation.x = -Math.PI/2;
 ground.receiveShadow = true;
 scene.add(ground);
 
-// add a subtle track texture lines (procedural)
-const lineGeo = new THREE.PlaneGeometry(1200, 1200, 1, 1);
-const lineMat = new THREE.MeshBasicMaterial({ color:0x20262b, transparent:true, opacity:0.35 });
-const lines = new THREE.Mesh(lineGeo, lineMat);
-lines.rotation.x = -Math.PI/2;
-lines.position.y = 0.01;
-scene.add(lines);
+// procedural track: a wide rounded rectangle path drawn as thin slightly lighter plane
+const track = new THREE.Mesh(
+  new THREE.PlaneGeometry(800, 200, 1,1),
+  new THREE.MeshStandardMaterial({color:0x24292e, roughness:0.7})
+);
+track.rotation.x = -Math.PI/2;
+track.receiveShadow = true;
+track.position.y = 0.01;
+scene.add(track);
 
-// === ENV: low poly skyline boxes for depth ===
-const boxGeom = new THREE.BoxGeometry(1,1,1);
-for(let i=0;i<160;i++){
-  let b = new THREE.Mesh(boxGeom, new THREE.MeshStandardMaterial({ color: 0x0f1418, roughness:0.9 }));
-  b.scale.setScalar(1 + Math.random()*10);
-  b.position.set((Math.random()-0.5)*600, b.scale.y*0.5, (Math.random()-0.5)*600);
-  b.material.emissive = new THREE.Color(0x000000);
-  scene.add(b);
+// lane markings (repeat texture simulated by thin boxes)
+for(let i=-6;i<=6;i+=3){
+  const stripe = new THREE.Mesh(new THREE.BoxGeometry(200,0.02,0.18), new THREE.MeshStandardMaterial({color:0xdedede, emissive:0x111111}));
+  stripe.position.set(i*6, 0.02, 0);
+  stripe.rotation.x = -Math.PI/2;
+  scene.add(stripe);
 }
 
-// === CAR (group made from simple boxes) ===
+// ---------- Environment assets (boxes) ----------
+const boxGeom = new THREE.BoxGeometry(1,1,1);
+for(let i=0;i<120;i++){
+  const h = 1 + Math.random()*18;
+  const m = new THREE.Mesh(boxGeom, new THREE.MeshStandardMaterial({color:0x0f1113, roughness:0.95}));
+  m.scale.setScalar(1 + Math.random()*10);
+  m.position.set((Math.random()-0.5)*800, m.scale.y*0.5, (Math.random()-0.5)*800);
+  scene.add(m);
+}
+
+// ---------- Track cones ----------
+const cones = [];
+function makeCone(x,z){
+  const cone = new THREE.Mesh(new THREE.ConeGeometry(0.25,0.6,12), new THREE.MeshStandardMaterial({color:0xff6a00}));
+  cone.position.set(x,0.3,z);
+  cone.castShadow = true;
+  scene.add(cone);
+  cones.push(cone);
+}
+// scatter cones as obstacles
+for(let i=0;i<18;i++){
+  const x = (Math.random()-0.5)*160;
+  const z = (Math.random()-0.5)*160;
+  makeCone(x,z);
+}
+
+// ---------- Better car (procedural multi-part) ----------
 const car = new THREE.Group();
-car.position.set(0, 0.6, 0);
+car.position.set(0,0.6,0);
 scene.add(car);
 
-const bodyGeo = new THREE.BoxGeometry(1.8, 0.5, 3.6);
-const bodyMat = new THREE.MeshStandardMaterial({ color:0xff2d2d, metalness:0.4, roughness:0.3 });
-const body = new THREE.Mesh(bodyGeo, bodyMat);
-body.castShadow = true;
-body.position.y = 0.4;
-car.add(body);
+// body
+const bodyMat = new THREE.MeshStandardMaterial({color:0xff3b3b, roughness:0.25, metalness:0.4});
+const bodyMesh = new THREE.Mesh(new THREE.BoxGeometry(2.2,0.5,4.0), bodyMat);
+bodyMesh.castShadow = true; bodyMesh.receiveShadow = false; bodyMesh.position.y = 0.45;
+car.add(bodyMesh);
 
-// roof
-const roofGeo = new THREE.BoxGeometry(1.2,0.22,1.4);
-const roof = new THREE.Mesh(roofGeo, new THREE.MeshStandardMaterial({ color:0x111827, roughness:0.2 }));
-roof.position.set(0,0.7,-0.15);
-roof.castShadow = true;
-car.add(roof);
+// cabin
+const cabin = new THREE.Mesh(new THREE.BoxGeometry(1.4,0.35,1.6), new THREE.MeshStandardMaterial({color:0x0e1115, roughness:0.2}));
+cabin.position.set(0,0.8,-0.2); cabin.castShadow = true; car.add(cabin);
 
-// wheels (visual)
-const wheelGeom = new THREE.CylinderGeometry(0.33,0.33,0.3,12);
-const wheelMat = new THREE.MeshStandardMaterial({ color:0x0b0b0b, metalness:0.6, roughness:0.5 });
-function makeWheel(x,z){
-  let w = new THREE.Mesh(wheelGeom, wheelMat);
-  w.rotation.z = Math.PI/2;
-  w.position.set(x, 0.2, z);
-  w.castShadow = true;
-  car.add(w);
-  return w;
+// spoiler
+const spoiler = new THREE.Mesh(new THREE.BoxGeometry(1.4,0.08,0.22), bodyMat);
+spoiler.position.set(0,0.72,-1.8); car.add(spoiler);
+
+// wheels
+const wheelGeom = new THREE.CylinderGeometry(0.33,0.33,0.3,18);
+wheelGeom.rotateZ(Math.PI/2);
+const wheelMat = new THREE.MeshStandardMaterial({color:0x050505, metalness:0.6});
+const wfl = new THREE.Mesh(wheelGeom, wheelMat); wfl.position.set(-0.95,0.22,1.0); wfl.castShadow=true; car.add(wfl);
+const wfr = new THREE.Mesh(wheelGeom, wheelMat); wfr.position.set(0.95,0.22,1.0); wfr.castShadow=true; car.add(wfr);
+const wrl = new THREE.Mesh(wheelGeom, wheelMat); wrl.position.set(-0.95,0.22,-1.4); wrl.castShadow=true; car.add(wrl);
+const wrr = new THREE.Mesh(wheelGeom, wheelMat); wrr.position.set(0.95,0.22,-1.4); wrr.castShadow=true; car.add(wrr);
+
+// glass highlight
+const glass = new THREE.Mesh(new THREE.BoxGeometry(1.38,0.28,1.48), new THREE.MeshStandardMaterial({color:0x6aa3ff, roughness:0.1, metalness:0.0, transparent:true, opacity:0.95}));
+glass.position.set(0,0.78,-0.2); car.add(glass);
+
+// add small "underbody" glow emissive
+bodyMat.emissive = new THREE.Color(0x000000);
+
+// ---------- AI opponents (simple box cars that follow waypoints) ----------
+const aiCars = [];
+const aiCount = 3;
+const aiWaypoints = [];
+// create circular waypoints
+for(let i=0;i<28;i++){
+  const a = (i/28)*Math.PI*2;
+  aiWaypoints.push(new THREE.Vector3(Math.cos(a)*60, 0, Math.sin(a)*60));
 }
-const wfl = makeWheel(-0.9, 1.0);
-const wfr = makeWheel(0.9, 1.0);
-const wrl = makeWheel(-0.9, -1.2);
-const wrr = makeWheel(0.9, -1.2);
+function makeAICar(color){
+  const g = new THREE.Group();
+  const m = new THREE.Mesh(new THREE.BoxGeometry(1.8,0.5,3.2), new THREE.MeshStandardMaterial({color:color, roughness:0.4, metalness:0.2}));
+  m.castShadow=true; g.add(m);
+  scene.add(g);
+  return {group:g, idx: Math.floor(Math.random()*aiWaypoints.length), speed: 8 + Math.random()*6};
+}
+for(let i=0;i<aiCount;i++) aiCars.push(makeAICar( i===0?0x00aaff: (i===1?0x55ff66:0xffdd55) ));
 
-// small spoiler
-const spoiler = new THREE.Mesh(new THREE.BoxGeometry(1.4,0.05,0.2), new THREE.MeshStandardMaterial({ color:0xff2d2d }));
-spoiler.position.set(0,0.6,-1.8);
-car.add(spoiler);
-
-// === PARTICLES (smoke) ===
-const particleCount = 120;
+// ---------- Particles (smoke) ----------
+let particleCount = 140;
 const particlesGeo = new THREE.BufferGeometry();
-const positions = new Float32Array(particleCount * 3);
-const sizes = new Float32Array(particleCount);
-for (let i=0;i<particleCount;i++){ positions[i*3]=0; positions[i*3+1]= -10; positions[i*3+2]=0; sizes[i]=1.0; }
-particlesGeo.setAttribute('position', new THREE.BufferAttribute(positions, 3));
-particlesGeo.setAttribute('size', new THREE.BufferAttribute(sizes, 1));
-const sprite = new THREE.TextureLoader().load('data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAQAAAC1+jfqAAAAIElEQVQoz2NgwAGMDEwMDAw8P///w8GBgYGBoYmBgAAAN8IBnA5Y7wAAAAASUVORK5CYII=');
-const particlesMat = new THREE.PointsMaterial({ size:0.5, map:sprite, transparent:true, opacity:0.55, depthWrite:false, color:0xaaaaaa });
+let positions = new Float32Array(particleCount*3);
+for(let i=0;i<particleCount;i++){ positions[i*3]=0; positions[i*3+1]=-10; positions[i*3+2]=0; }
+particlesGeo.setAttribute('position', new THREE.BufferAttribute(positions,3));
+const tiny = new THREE.TextureLoader().load('data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAwAAAAMAgMAAADbK1i/AAAADFBMVEUAAAD////MzMyZmZm6UOJlAAAAAnRSTlMAAHaTzTgAAAAQSURBVAjXY2AAAAABAQEAa2cGsgAAAABJRU5ErkJggg==');
+const particlesMat = new THREE.PointsMaterial({size:0.5, map:tiny, transparent:true, opacity:0.6, depthWrite:false, color:0xdddddd});
 const particles = new THREE.Points(particlesGeo, particlesMat);
-particles.frustumCulled = false;
+particles.frustumCulled=false;
 scene.add(particles);
 
-// === GAME STATE & PHYSICS ===
-let vel = new THREE.Vector3(0,0,0); // world-space velocity
-let forward = new THREE.Vector3(0,0,1);
-let yaw = 0;
-let throttle = 0;
-let steerInput = 0;
-let handbrake = false;
-
-const params = {
-  maxSpeed: 40,       // m/s
-  accel: 30,          // m/s^2
-  brake: 50,
-  steerSpeed: 2.8,    // how fast car turns (radians/s) at low speed
-  driftFactor: 0.9,   // lower = more drift (0.7 aggressive)
-  grip: 0.92,         // overall grip
-  downforce: 6,
-  smokeThreshold: 5.5,
-  score: 0
-};
-
-// helper to get local velocity (car space)
-function getLocalVelocity() {
-  // transform velocity into car local (z forward)
-  let inv = new THREE.Matrix4().extractRotation(car.matrixWorld).invert();
-  let local = vel.clone().applyMatrix4(inv);
-  return local;
-}
-
-// control state
-const keys = { left:false, right:false, up:false, down:false, space:false };
-
-// input handlers (keyboard)
-window.addEventListener('keydown', e => {
+// ---------- Controls & input ----------
+const keys = {left:false, right:false, up:false, down:false, space:false};
+window.addEventListener('keydown', e=>{
   if(e.key==='ArrowLeft') keys.left=true;
   if(e.key==='ArrowRight') keys.right=true;
   if(e.key==='ArrowUp') keys.up=true;
   if(e.key==='ArrowDown') keys.down=true;
   if(e.key===' ') keys.space=true;
 });
-window.addEventListener('keyup', e => {
+window.addEventListener('keyup', e=>{
   if(e.key==='ArrowLeft') keys.left=false;
   if(e.key==='ArrowRight') keys.right=false;
   if(e.key==='ArrowUp') keys.up=false;
   if(e.key==='ArrowDown') keys.down=false;
   if(e.key===' ') keys.space=false;
 });
-
-// touch controls
+// mobile pads
 const leftPad = document.getElementById('leftPad');
 const rightPad = document.getElementById('rightPad');
 const upPad = document.getElementById('upPad');
-
-function addTouch(el, downCb, upCb) {
-  el.addEventListener('touchstart', e => { e.preventDefault(); downCb(); }, {passive:false});
-  el.addEventListener('touchend', e => { e.preventDefault(); upCb(); }, {passive:false});
+function addTouch(el, downCb, upCb){
+  el.addEventListener('touchstart', e=>{e.preventDefault(); downCb();},{passive:false});
+  el.addEventListener('touchend', e=>{e.preventDefault(); upCb();},{passive:false});
 }
 addTouch(leftPad, ()=> keys.left=true, ()=> keys.left=false);
 addTouch(rightPad, ()=> keys.right=true, ()=> keys.right=false);
 addTouch(upPad, ()=> keys.up=true, ()=> keys.up=false);
 
-// === CAMERA SMOOTH FOLLOW ===
-const camTarget = new THREE.Object3D();
-scene.add(camTarget);
-const camOffset = new THREE.Vector3(0, 3.2, -8.0);
-let camVel = new THREE.Vector3();
+// ---------- Physics-ish state ----------
+let vel = new THREE.Vector3();
+let yaw = 0;
+let throttle = 0;
+let steerInput = 0;
+let handbrake = false;
+let params = {
+  maxSpeed:50, accel:35, steerSpeed:3.2, driftFactor:0.86, grip:0.92, downforce:8, smokeThreshold:3.5, score:0
+};
 
-// UI elements
+// ---------- Audio (synth engine + skid) ----------
+let audioEnabled = true;
+const AudioCtx = window.AudioContext || window.webkitAudioContext;
+let ctxAudio = audioEnabled ? new AudioCtx() : null;
+let engineOsc, engineGain, skidGain, skidNoise;
+function initAudio(){
+  if(!audioEnabled) return;
+  if(ctxAudio.state === 'suspended') ctxAudio.resume();
+  engineOsc = ctxAudio.createOscillator();
+  engineGain = ctxAudio.createGain();
+  engineOsc.type = 'sawtooth';
+  engineOsc.frequency.value = 80; // base
+  engineGain.gain.value = 0.0005;
+  engineOsc.connect(engineGain);
+  engineGain.connect(ctxAudio.destination);
+  engineOsc.start();
+
+  // skid noise (simple filtered buffer-source using oscillator+bandpass isn't great; use noise via script)
+  // create a noise buffer
+  const bufferSize = 2*ctxAudio.sampleRate;
+  const noiseBuffer = ctxAudio.createBuffer(1, bufferSize, ctxAudio.sampleRate);
+  const output = noiseBuffer.getChannelData(0);
+  for (let i = 0; i < bufferSize; i++) output[i] = (Math.random()*2-1)*0.5;
+  skidNoise = ctxAudio.createBufferSource();
+  skidNoise.buffer = noiseBuffer;
+  skidNoise.loop = true;
+  const skidFilter = ctxAudio.createBiquadFilter();
+  skidFilter.type = 'bandpass';
+  skidFilter.frequency.value = 1000;
+  skidGain = ctxAudio.createGain();
+  skidGain.gain.value = 0.0;
+  skidNoise.connect(skidFilter);
+  skidFilter.connect(skidGain);
+  skidGain.connect(ctxAudio.destination);
+  skidNoise.start();
+}
+if(audioEnabled) initAudio();
+
+// ---------- UI refs ----------
 const speedEl = document.getElementById('speed');
 const driftEl = document.getElementById('drift');
 const scoreEl = document.getElementById('score');
+const qualityBtn = document.getElementById('qualityBtn');
+const soundBtn = document.getElementById('soundBtn');
+const restartBtn = document.getElementById('restartBtn');
 
-// Utility
-function clamp(v,a,b){ return Math.max(a, Math.min(b, v)); }
+let highQuality = true;
+qualityBtn.onclick = ()=>{
+  highQuality = !highQuality;
+  qualityBtn.innerText = 'Quality: ' + (highQuality ? 'High' : 'Low');
+  // adjust particle count and shadow settings
+  particleCount = highQuality ? 140 : 40;
+  // recreate particle buffer
+  const newPos = new Float32Array(particleCount*3);
+  for (let i=0;i<particleCount;i++){ newPos[i*3+1] = -10; }
+  particles.geometry.setAttribute('position', new THREE.BufferAttribute(newPos,3));
+  renderer.shadowMap.enabled = highQuality;
+  dir.shadow.mapSize.set(highQuality?1024:256, highQuality?1024:256);
+};
+soundBtn.onclick = ()=>{
+  audioEnabled = !audioEnabled;
+  soundBtn.innerText = 'Sound: ' + (audioEnabled ? 'On' : 'Off');
+  if(audioEnabled && !ctxAudio){ ctxAudio = new AudioCtx(); initAudio(); }
+  if(!audioEnabled && ctxAudio){ try{ ctxAudio.suspend(); }catch(e){} }
+};
+restartBtn.onclick = resetPosition;
 
-// === MAIN UPDATE LOOP ===
+// ---------- Helper: local velocity ----------
+function getLocalVel(){
+  const inv = new THREE.Matrix4().extractRotation(car.matrixWorld).invert();
+  return vel.clone().applyMatrix4(inv);
+}
+
+// ---------- Particles update ----------
+function updateParticles(spawning, dt){
+  const posAttr = particles.geometry.attributes.position;
+  const arr = posAttr.array;
+  for (let i=0;i<particleCount;i++){
+    const idx = i*3;
+    // if below ground, re-init off-screen
+    if (arr[idx+1] < -5) {
+      arr[idx] = car.position.x + (Math.random()-0.5)*0.8;
+      arr[idx+1] = car.position.y - 0.1;
+      arr[idx+2] = car.position.z - 1.4 + (Math.random()*0.6);
+    } else {
+      arr[idx] += (Math.random()-0.5) * 0.02;
+      arr[idx+1] += 0.02 + Math.random()*0.04;
+      arr[idx+2] += (Math.random()-0.5) * 0.02;
+      if (!spawning) arr[idx+1] -= 0.02;
+    }
+  }
+  posAttr.needsUpdate = true;
+}
+
+// ---------- Simple collision (car vs cones) ----------
+function checkConeCollisions(){
+  for (let c of cones){
+    const d = car.position.distanceTo(c.position);
+    if (d < 1.2){
+      // small bounce / slow down
+      vel.multiplyScalar(0.5);
+      params.score = Math.max(0, params.score - 8);
+      // move cone a bit
+      c.position.x += (Math.random()-0.5)*2.2;
+      c.position.z += (Math.random()-0.5)*2.2;
+      if (audioEnabled && skidGain) skidGain.gain.value = 0.08;
+      setTimeout(()=>{ if(skidGain) skidGain.gain.value = 0.0; }, 120);
+    }
+  }
+}
+
+// ---------- Simple collision (car vs AI) ----------
+function checkAICollisions(){
+  for (let ai of aiCars){
+    const d = car.position.distanceTo(ai.group.position);
+    if (d < 2.1){
+      // both cars bounce a little
+      const push = car.position.clone().sub(ai.group.position).setY(0).normalize().multiplyScalar(3);
+      vel.add(push);
+      ai.speed *= 0.85;
+      params.score = Math.max(0, params.score - 6);
+      if (audioEnabled && skidGain) skidGain.gain.value = 0.06;
+      setTimeout(()=>{ if(skidGain) skidGain.gain.value = 0.0; }, 120);
+    }
+  }
+}
+
+// ---------- Reset position ----------
+function resetPosition(){
+  car.position.set(0,0.6,0);
+  vel.set(0,0,0);
+  yaw = 0;
+  params.score = 0;
+}
+
+// ---------- AI update ----------
+function updateAI(dt){
+  const activeAI = highQuality ? aiCars.length : Math.min(1, aiCars.length);
+  for (let i=0;i<activeAI;i++){
+    const ai = aiCars[i];
+    const target = aiWaypoints[ai.idx];
+    // if close to target, advance
+    const dir = target.clone().sub(ai.group.position);
+    if (dir.length() < 4) ai.idx = (ai.idx+1) % aiWaypoints.length;
+    const desired = dir.clone().normalize().multiplyScalar(ai.speed*dt);
+    ai.group.position.add(desired);
+    // orient toward next waypoint smoothly
+    const look = aiWaypoints[ai.idx].clone().sub(ai.group.position).normalize();
+    const q = new THREE.Quaternion().setFromUnitVectors(new THREE.Vector3(0,0,1), look);
+    ai.group.quaternion.slerp(q, 0.06);
+    // simple wobble lane movement
+    ai.group.position.y = 0.3;
+  }
+}
+
+// ---------- Main update loop ----------
 let last = performance.now();
 function animate(t){
-  const dt = Math.min(0.033, (t - last) / 1000);
+  const dt = Math.min(0.033, (t-last)/1000);
   last = t;
 
-  // read inputs
-  throttle = keys.up ? 1 : (keys.down ? -0.5 : 0);
+  // inputs
+  throttle = keys.up ? 1 : (keys.down ? -0.35 : 0);
   steerInput = (keys.left? -1:0) + (keys.right? 1:0);
   handbrake = keys.space;
 
-  // forward vector (car local forward in world)
-  const carForward = new THREE.Vector3(0,0,1).applyQuaternion(car.quaternion);
-
-  // accelerate/brake along forward direction
-  const accelVec = carForward.clone().multiplyScalar(throttle * params.accel * dt);
+  // forward direction and acceleration
+  const forward = new THREE.Vector3(0,0,1).applyQuaternion(car.quaternion);
+  const accelVec = forward.clone().multiplyScalar(throttle * params.accel * dt);
   vel.add(accelVec);
 
-  // natural drag
-  vel.multiplyScalar(0.995);
+  // custom drag
+  vel.multiplyScalar(0.994);
 
-  // turning: steering effectiveness reduces with speed (so easier at low speed)
+  // steering - yaw rate depends on speed
   const speed = vel.length();
-  const speedFactor = clamp(speed / 10, 0.05, 1.0);
-  // yaw change from steering + drifting (simulate counter-steer)
+  const speedFactor = clamp(speed/10, 0.05, 1.0);
   const yawRate = steerInput * params.steerSpeed * (1 + (0.6 - speedFactor));
   yaw += yawRate * dt * (speed / (1+speed));
 
-  // apply yaw rotation to orientation slowly influenced by velocity
-  // orientation aims to align with velocity direction slowly (simulating under/oversteer)
-  // compute slip factor based on lateral velocity
-  const local = getLocalVelocity();
-  const lateral = local.x;
-  const longitudinal = local.z;
-  const slipAngle = Math.atan2(lateral, Math.max(0.0001, Math.abs(longitudinal))) * (180/Math.PI);
-  const isDrifting = Math.abs(lateral) > params.smokeThreshold && Math.abs(slipAngle) > 6;
+  // compute local velocity and lateral
+  const inv = new THREE.Matrix4().extractRotation(car.matrixWorld).invert();
+  const local = vel.clone().applyMatrix4(inv);
+  const lateral = local.x, longitudinal = local.z;
+  const slipAngle = Math.atan2(Math.abs(lateral), Math.max(0.0001, Math.abs(longitudinal))) * (180/Math.PI);
+  const isDrifting = Math.abs(lateral) > params.smokeThreshold && Math.abs(slipAngle) > 7;
 
-  // drift/grip effect: reduce lateral damping to allow drift
-  const lateralDamping = handbrake ? 0.65 : (isDrifting ? params.driftFactor : params.grip);
-  // apply lateral damping (remove sideways velocity gradually)
-  const sideways = car.localToWorld(new THREE.Vector3(1,0,0)).sub(car.position).normalize(); // direction right
-  // instead of physics, we blend orientation towards movement and reduce lateral velocity
-  // compute desired forward direction from yaw and small alignment from velocity
-  const qYaw = new THREE.Quaternion().setFromEuler(new THREE.Euler(0, yaw, 0));
-  // rotate velocity to reduce lateral component
-  const localVel = getLocalVelocity();
-  localVel.x *= lateralDamping;
-  // reconstruct world vel from local
-  const worldVel = new THREE.Vector3(localVel.x, localVel.y, localVel.z).applyQuaternion(car.quaternion);
+  // lateral damping / drift
+  const lateralDamping = handbrake ? 0.62 : (isDrifting ? params.driftFactor : params.grip);
+  local.x *= lateralDamping;
+  // reconstruct world velocity
+  const worldVel = local.applyMatrix4(new THREE.Matrix4().makeRotationFromQuaternion(car.quaternion));
   vel.copy(worldVel);
 
-  // apply subtle downforce to help stability
-  vel.add(carForward.clone().multiplyScalar(-params.downforce * 0.0005 * speed * dt));
+  // subtle downforce
+  vel.add(forward.clone().multiplyScalar(-params.downforce * 0.0005 * speed * dt));
 
-  // limit speed
+  // clamp speed
   if (vel.length() > params.maxSpeed) vel.setLength(params.maxSpeed);
 
-  // update car position from vel
+  // move car
   car.position.addScaledVector(vel, dt);
 
-  // rotate car to face a blend of yaw and velocity direction
-  const velDir = vel.clone().normalize();
-  if (vel.length() > 0.5) {
-    const forwardDir = carForward.clone().normalize();
-    // target orientation: mix yaw-based orientation and velocity direction
-    const yawQ = new THREE.Quaternion().setFromEuler(new THREE.Euler(0, yaw, 0));
-    const targetDir = vel.clone().normalize();
-    const targetQ = new THREE.Quaternion().setFromUnitVectors(new THREE.Vector3(0,0,1), targetDir);
-    // blend factor depending on speed and drifting
-    const blend = clamp(0.02 + (isDrifting ? 0.2 : 0.06) + (speed / 80), 0.02, 0.6);
-    car.quaternion.slerp(targetQ.slerp(yawQ, 0.5), blend);
+  // orientation: blend yaw and velocity
+  if (vel.length() > 0.5){
+    const targetQ = new THREE.Quaternion().setFromUnitVectors(new THREE.Vector3(0,0,1), vel.clone().normalize());
+    car.quaternion.slerp(targetQ, 0.02 + (isDrifting?0.12:0.05));
   } else {
     car.quaternion.slerp(new THREE.Quaternion().setFromEuler(new THREE.Euler(0,yaw,0)), 0.08);
   }
 
-  // spin wheels (visual)
-  const wheelSpin = vel.length() * 6;
-  [wfl, wfr, wrl, wrr].forEach((w, idx)=> {
-    w.rotation.x += wheelSpin * dt;
-  });
+  // wheel spin visual
+  const wheelSpin = vel.length()*6;
+  [wfl,wfr,wrl,wrr].forEach(w=> w.rotation.x += wheelSpin*dt);
 
-  // particles: spawn behind rear wheels when drifting
-  updateParticles(isDrifting, dt);
+  // update particles
+  updateParticles(isDrifting && throttle>0.6, dt);
 
-  // camera follow (smooth)
-  const camPos = car.position.clone().add(new THREE.Vector3(0, 2.6, -8).applyQuaternion(car.quaternion));
+  // sound: engine pitch & skid
+  if (audioEnabled && engineOsc){
+    const rpm = 400 + vel.length()*60;
+    engineOsc.frequency.linearRampToValueAtTime(80 + vel.length()*10, ctxAudio.currentTime + 0.02);
+    engineGain.gain.linearRampToValueAtTime(0.0008 + (vel.length()/params.maxSpeed)*0.003, ctxAudio.currentTime + 0.02);
+    if (isDrifting && Math.abs(lateral)>params.smokeThreshold){
+      skidGain.gain.linearRampToValueAtTime(0.04 + Math.min(0.14, Math.abs(lateral)*0.01), ctxAudio.currentTime + 0.02);
+    } else {
+      skidGain.gain.linearRampToValueAtTime(0.0, ctxAudio.currentTime + 0.02);
+    }
+  }
+
+  // camera follow
+  const camPos = car.position.clone().add(new THREE.Vector3(0, 2.8, -8).applyQuaternion(car.quaternion));
   camera.position.lerp(camPos, 0.12);
-  const lookAt = car.position.clone().add(new THREE.Vector3(0,1,0));
-  camera.lookAt(lookAt);
-
-  // small FOV kick based on speed
-  camera.fov = 55 + clamp(vel.length()/params.maxSpeed * 8, 0, 10);
+  camera.lookAt(car.position.clone().add(new THREE.Vector3(0,1.2,0)));
+  camera.fov = 55 + clamp(vel.length()/params.maxSpeed * 10, 0, 12);
   camera.updateProjectionMatrix();
 
-  // update UI
-  speedEl.innerText = "Speed: " + Math.round(vel.length()*3.6) + " km/h";
-  driftEl.innerText = "Drift: " + Math.round(Math.abs(local.x)*10);
-  if (isDrifting) params.score += Math.abs(local.x) * dt * 6;
-  scoreEl.innerText = "Score: " + Math.floor(params.score);
+  // check collisions
+  checkConeCollisions();
+  checkAICollisions();
 
+  // update AI
+  updateAI(dt);
+
+  // update UI & score
+  speedEl.innerText = 'Speed: ' + Math.round(vel.length()*3.6) + ' km/h';
+  driftEl.innerText = 'Drift: ' + Math.round(Math.abs(local.x)*10);
+  if (isDrifting) params.score += Math.abs(local.x) * dt * 6;
+  scoreEl.innerText = 'Score: ' + Math.floor(params.score);
+
+  // render
   renderer.render(scene, camera);
   requestAnimationFrame(animate);
 }
 
-function updateParticles(spawning, dt){
-  const pos = particles.geometry.attributes.position.array;
-  for (let i=0;i<particleCount;i++){
-    const idx = i*3;
-    // if off-screen place below ground
-    if (pos[idx+1] < -5) {
-      pos[idx] = car.position.x + (Math.random()-0.5)*0.4;
-      pos[idx+1] = car.position.y - 0.1;
-      pos[idx+2] = car.position.z + (Math.random()-0.5)*0.4 -1.2;
-    } else {
-      // rise and fade away
-      pos[idx] += (Math.random()-0.5) * 0.04;
-      pos[idx+1] += 0.02 + Math.random()*0.05;
-      pos[idx+2] += (Math.random()-0.5) * 0.04;
-      // slowly sink if not spawning
-      if (!spawning) pos[idx+1] -= 0.02;
-    }
-  }
-  if (spawning) {
-    // nudge a block of particles near rear
-    for (let j=0;j<10;j++){
-      let i = Math.floor(Math.random()*particleCount);
-      let idx = i*3;
-      pos[idx] = car.position.x + (Math.random()-0.5)*0.5;
-      pos[idx+1] = car.position.y - 0.05;
-      pos[idx+2] = car.position.z - 1.3 + (Math.random()*0.3);
-    }
-  }
-  particles.geometry.attributes.position.needsUpdate = true;
-}
+// ---------- Utilities ----------
+function clamp(v,a,b){ return Math.max(a, Math.min(b, v)); }
 
-// initial populate particles under ground so they come in on spawn
-for (let i=0;i<particleCount;i++){
-  positions[i*3+1] = -10;
-}
-particles.geometry.setAttribute('position', new THREE.BufferAttribute(positions, 3));
-
-// start loop
+// start animation
 requestAnimationFrame(animate);
 
-// ========== HELPER: simple instruction overlay for desktop ==========
-const allowRotate = false;
-if (allowRotate){
-  // optional controls, left out for clarity to focus on drift
+// ---------- initial particle attribute set -----------
+for (let i=0;i<particleCount;i++){ positions[i*3+1] = -10; }
+particles.geometry.setAttribute('position', new THREE.BufferAttribute(positions,3));
+
+// ---------- initialize audio automatically on first touch/click (mobile autoplay policy) ----------
+function unlockAudio(){
+  if(!ctxAudio) return;
+  if(ctxAudio.state === 'suspended') ctxAudio.resume();
+  // small click to allow audio
+  if(!engineOsc){ initAudio(); }
+  window.removeEventListener('touchstart', unlockAudio);
 }
+window.addEventListener('touchstart', unlockAudio, {passive:true});
+window.addEventListener('mousedown', unlockAudio);
 
-// === done ===
-
+// ---------- Done ----------
+console.log('3D Drift Upgraded — ready');
 </script>
 </body>
 </html>
