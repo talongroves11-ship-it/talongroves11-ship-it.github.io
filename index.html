@@ -1,117 +1,120 @@
-import React from 'react';
-import { motion } from 'framer-motion';
-import { Phone, Mail, MapPin, Facebook, Instagram } from 'lucide-react';
-import ContactForm from './ContactForm';
+<!DOCTYPE html>
+<html>
+<head>
+<title>Drift Game</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<style>
+    body { margin:0; overflow:hidden; background:#222; }
+    canvas { background:#333; display:block; margin:0 auto; }
+    #controls {
+        position: fixed;
+        bottom: 20px;
+        left: 50%;
+        transform: translateX(-50%);
+        display: flex;
+        gap: 20px;
+    }
+    .btn {
+        width: 70px;
+        height: 70px;
+        background: #ffffff44;
+        border-radius: 50%;
+        border: 2px solid #fff;
+        touch-action:none;
+    }
+</style>
+</head>
+<body>
 
-export default function ContactSection({ businessInfo }) {
-  return (
-    <section id="contact" className="py-32 px-6 bg-slate-900">
-      <div className="max-w-6xl mx-auto">
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          whileInView={{ opacity: 1, y: 0 }}
-          viewport={{ once: true }}
-          transition={{ duration: 0.6 }}
-          className="text-center mb-16"
-        >
-          <span className="text-amber-400 text-sm tracking-[0.2em] uppercase font-medium">Get In Touch</span>
-          <h2 className="text-4xl md:text-5xl font-light text-white mt-4 tracking-tight mb-6">
-            Ready to Get Started?
-          </h2>
-          <p className="text-slate-400 text-lg max-w-xl mx-auto">
-            Contact us today to schedule your aerial photography session and see your property from a whole new perspective.
-          </p>
-        </motion.div>
-        
-        <div className="grid lg:grid-cols-2 gap-12 items-start">
-          {/* Contact Form */}
-          <motion.div
-            initial={{ opacity: 0, x: -30 }}
-            whileInView={{ opacity: 1, x: 0 }}
-            viewport={{ once: true }}
-            transition={{ duration: 0.6, delay: 0.2 }}
-          >
-            <ContactForm businessEmail={businessInfo?.email} />
-          </motion.div>
-          
-          {/* Contact Info */}
-          <motion.div
-            initial={{ opacity: 0, x: 30 }}
-            whileInView={{ opacity: 1, x: 0 }}
-            viewport={{ once: true }}
-            transition={{ duration: 0.6, delay: 0.3 }}
-            className="space-y-8"
-          >
-            <div className="flex flex-col gap-6">
-            {businessInfo?.phone && (
-              <a 
-                href={`tel:${businessInfo.phone}`}
-                className="flex items-center gap-4 text-white hover:text-amber-400 transition-colors group"
-              >
-                <div className="w-14 h-14 rounded-2xl bg-white/10 flex items-center justify-center group-hover:bg-amber-500 transition-colors">
-                  <Phone className="w-6 h-6" />
-                </div>
-                <div className="text-left">
-                  <p className="text-white/60 text-sm">Phone</p>
-                  <span className="text-lg font-medium">{businessInfo.phone}</span>
-                </div>
-              </a>
-            )}
-            
-            {businessInfo?.email && (
-              <a 
-                href={`mailto:${businessInfo.email}`}
-                className="flex items-center gap-4 text-white hover:text-amber-400 transition-colors group"
-              >
-                <div className="w-14 h-14 rounded-2xl bg-white/10 flex items-center justify-center group-hover:bg-amber-500 transition-colors">
-                  <Mail className="w-6 h-6" />
-                </div>
-                <div className="text-left">
-                  <p className="text-white/60 text-sm">Email</p>
-                  <span className="text-lg font-medium">{businessInfo.email}</span>
-                </div>
-              </a>
-            )}
-            
-            {businessInfo?.location && (
-              <div className="flex items-center gap-4 text-white">
-                <div className="w-14 h-14 rounded-2xl bg-white/10 flex items-center justify-center">
-                  <MapPin className="w-6 h-6" />
-                </div>
-                <div className="text-left">
-                  <p className="text-white/60 text-sm">Service Area</p>
-                  <span className="text-lg font-medium">{businessInfo.location}</span>
-                </div>
-              </div>
-            )}
-            </div>
-          
-            {/* Social Links */}
-            <div className="flex gap-4 pt-4">
-              {businessInfo?.facebook_url && (
-                <a 
-                  href={businessInfo.facebook_url}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="w-12 h-12 rounded-full bg-white/10 flex items-center justify-center text-white hover:bg-amber-500 hover:text-white transition-all duration-300"
-                >
-                  <Facebook className="w-5 h-5" />
-                </a>
-              )}
-              {businessInfo?.instagram_url && (
-                <a 
-                  href={businessInfo.instagram_url}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="w-12 h-12 rounded-full bg-white/10 flex items-center justify-center text-white hover:bg-amber-500 hover:text-white transition-all duration-300"
-                >
-                  <Instagram className="w-5 h-5" />
-                </a>
-              )}
-            </div>
-          </motion.div>
-        </div>
-      </div>
-    </section>
-  );
+<canvas id="gameCanvas"></canvas>
+
+<!-- Mobile controls -->
+<div id="controls">
+    <div class="btn" id="left"></div>
+    <div class="btn" id="right"></div>
+</div>
+
+<script>
+const canvas = document.getElementById("gameCanvas");
+const ctx = canvas.getContext("2d");
+
+canvas.width = window.innerWidth;
+canvas.height = window.innerHeight;
+
+// CAR
+let car = {
+    x: canvas.width / 2,
+    y: canvas.height / 2,
+    angle: 0,
+    speed: 0,
+    maxSpeed: 6,
+    accel: 0.15,
+    friction: 0.05,
+    turnSpeed: 3
+};
+
+let keys = { left: false, right: false, up: false };
+
+// Keyboard controls
+document.addEventListener("keydown", e => {
+    if (e.key === "ArrowLeft") keys.left = true;
+    if (e.key === "ArrowRight") keys.right = true;
+    if (e.key === "ArrowUp") keys.up = true;
+});
+document.addEventListener("keyup", e => {
+    if (e.key === "ArrowLeft") keys.left = false;
+    if (e.key === "ArrowRight") keys.right = false;
+    if (e.key === "ArrowUp") keys.up = false;
+});
+
+// Mobile buttons
+document.getElementById("left").ontouchstart = () => keys.left = true;
+document.getElementById("left").ontouchend   = () => keys.left = false;
+document.getElementById("right").ontouchstart = () => keys.right = true;
+document.getElementById("right").ontouchend   = () => keys.right = false;
+
+// GAME LOOP
+function loop() {
+    ctx.clearRect(0,0,canvas.width,canvas.height);
+
+    // Acceleration
+    if (keys.up) {
+        car.speed += car.accel;
+        if (car.speed > car.maxSpeed) car.speed = car.maxSpeed;
+    } else {
+        car.speed -= car.friction;
+        if (car.speed < 0) car.speed = 0;
+    }
+
+    // Turning + drifting effect
+    if (car.speed > 0.3) {
+        if (keys.left)  car.angle -= car.turnSpeed * (car.speed / car.maxSpeed);
+        if (keys.right) car.angle += car.turnSpeed * (car.speed / car.maxSpeed);
+    }
+
+    // Movement
+    car.x += Math.cos(car.angle) * car.speed;
+    car.y += Math.sin(car.angle) * car.speed;
+
+    // Wrap edges
+    if (car.x < 0) car.x = canvas.width;
+    if (car.x > canvas.width) car.x = 0;
+    if (car.y < 0) car.y = canvas.height;
+    if (car.y > canvas.height) car.y = 0;
+
+    // Draw car
+    ctx.save();
+    ctx.translate(car.x, car.y);
+    ctx.rotate(car.angle);
+    ctx.fillStyle = "red";
+    ctx.fillRect(-20, -10, 40, 20);
+    ctx.restore();
+
+    requestAnimationFrame(loop);
 }
+
+loop();
+</script>
+
+</body>
+</html>
